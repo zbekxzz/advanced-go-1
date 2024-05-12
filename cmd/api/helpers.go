@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/julienschmidt/httprouter"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 type envelope map[string]any
@@ -83,4 +84,23 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 		return errors.New("body must only contain a single JSON value")
 	}
 	return nil
+}
+
+func (app *application) background(fn func()) {
+
+	// increment go routine quantity each time background method is called
+	app.wg.Add(1)
+	// Launch a background goroutine.
+	go func() {
+		// decrease value of goroutines before this goroutine is finished
+		app.wg.Done()
+		// Recover any panic.
+		defer func() {
+			if err := recover(); err != nil {
+				app.logger.PrintError(fmt.Errorf("%s", err), nil)
+			}
+		}()
+		// Execute the arbitrary function that we passed as the parameter.
+		fn()
+	}()
 }

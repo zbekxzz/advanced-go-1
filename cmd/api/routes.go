@@ -1,11 +1,12 @@
 package main
 
 import (
-	"github.com/julienschmidt/httprouter"
 	"net/http"
+
+	"github.com/julienschmidt/httprouter"
 )
 
-func (app *application) routes() *httprouter.Router {
+func (app *application) routes() http.Handler {
 	router := httprouter.New()
 
 	router.NotFound = http.HandlerFunc(app.notFoundResponse)
@@ -14,6 +15,15 @@ func (app *application) routes() *httprouter.Router {
 	router.HandlerFunc(http.MethodGet, "/v1/moduleinfo/:id", app.getModuleInfoHandler)
 	router.HandlerFunc(http.MethodPut, "/v1/moduleinfo/:id", app.editModuleInfoHandler)
 	router.HandlerFunc(http.MethodDelete, "/v1/moduleinfo/:id", app.deleteModuleInfoHandler)
+	// Defence
 
-	return router
+	router.HandlerFunc(http.MethodPost, "/v1/departmentinfo", app.createDepartmentInfoHandler)
+	router.HandlerFunc(http.MethodGet, "/v1/departmentinfo/:id", app.getDepartmentInfoHandler)
+
+	// Assignment 2
+
+	router.HandlerFunc(http.MethodPost, "/v1/users", app.registerUserHandler)
+	router.HandlerFunc(http.MethodPut, "/v1/users/activated", app.activateUserHandler)
+
+	return app.recoverPanic(app.rateLimit(router))
 }
